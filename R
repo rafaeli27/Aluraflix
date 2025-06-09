@@ -1,0 +1,170 @@
+!
+let trator;
+let plantas = [];
+let espacoEntrePlantas = 50;
+let linhas = [];
+let alturaSolo;
+let linhasDisponiveis = 7;
+let linhaAtualIndex = 0;
+let finalizouPlantio = false;
+let prontoParaColheita = false;
+let tempoDeEspera = 200; // Tempo para a cultura amadurecer após o plantio
+let contadorTempo = 0;
+let mensagemAtual = "";
+let mensagens = [
+  "Em uma bela manhã ensolarada,\no Sr. João, nosso agricultor dedicado,\ncomeçou cedinho mais um plantio no campo.",
+  "Com muito cuidado, ele dirige o trator,\ngarantindo que cada semente seja plantada.",
+  "Linha por linha, a terra vai se enchendo\nde brotos verdes, prontos para crescer.",
+  "O campo começa a ganhar vida\ncom as pequenas plantas germinando.",
+  "Sr. João sorri, satisfeito\ncom mais um dia de trabalho no campo.",
+  "Ele sabe sua importância! O suor de seu trabalho\n pode alimentar muitas pessoas na cidade.",
+  "Nosso agricultor sabe esperar o tempo certo.\n Pacientemente ele aguarda o dia da colheita!"
+];
+
+function setup() {
+  createCanvas(800, 600);
+  alturaSolo = height / 2;
+
+  for (let i = 0; i < linhasDisponiveis; i++) {
+    linhas.push(alturaSolo + 50 + i * 40);
+  }
+
+  trator = new Trator();
+  mensagemAtual = mensagens[0]; // Define a primeira mensagem
+}
+
+function draw() {
+  background(135, 206, 250);
+
+  // Sol no céu
+  textSize(50);
+  text("☀️", 50, 50);
+
+  // Quadro de texto maior e centralizado
+  let quadroX = 200;
+  let quadroY = 40;
+  let quadroLargura = 400;
+  let quadroAltura = 100;
+
+  fill(255);
+  rect(quadroX, quadroY, quadroLargura, quadroAltura, 10);
+  fill(0);
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  text(mensagemAtual, quadroX + quadroLargura / 2, quadroY + quadroAltura / 2);
+
+  fill(139, 69, 19);
+  rect(0, alturaSolo, width, height / 2);
+
+  trator.mover();
+  trator.mostrar();
+
+  for (let planta of plantas) {
+    planta.crescer();
+    planta.mostrar();
+  }
+
+  // Espera o tempo necessário antes de amadurecer as plantas
+  if (finalizouPlantio) {
+    contadorTempo++;
+    if (contadorTempo > tempoDeEspera) {
+      prontoParaColheita = true;
+    }
+  }
+}
+
+class Trator {
+  constructor() {
+    this.x = 0;
+    this.y = linhas[linhaAtualIndex];
+    this.velocidade = 2.5;
+    this.ultimoPlantioX = -espacoEntrePlantas;
+    this.orientacaoDireita = true;
+  }
+
+  mover() {
+    if (finalizouPlantio) return;
+
+    this.x += this.velocidade;
+
+    if (this.x > width || this.x < 0) {
+      this.velocidade *= -1;
+      this.orientacaoDireita = this.velocidade > 0;
+      this.mudarLinha();
+    }
+
+    if (this.ultimoPlantioX === -espacoEntrePlantas || abs(this.x - this.ultimoPlantioX) >= espacoEntrePlantas) {
+      plantas.push(new Planta(this.x, this.y));
+      this.ultimoPlantioX = this.x;
+    }
+  }
+
+  mudarLinha() {
+    linhaAtualIndex++;
+
+    if (linhaAtualIndex >= linhasDisponiveis) {
+      finalizouPlantio = true;
+      this.x = 0;
+      this.y = linhas[0];
+      this.orientacaoDireita = true;
+      return;
+    }
+
+    this.y = linhas[linhaAtualIndex];
+    this.ultimoPlantioX = -espacoEntrePlantas;
+
+    if (linhaAtualIndex < mensagens.length) {
+      mensagemAtual = mensagens[linhaAtualIndex];
+    }
+  }
+
+  mostrar() {
+    textSize(48);
+    if (this.orientacaoDireita) {
+      push();
+      translate(this.x + 32, this.y);
+      scale(-1, 1);
+      text("🚜", 0, 0);
+      pop();
+    } else {
+      text("🚜", this.x, this.y);
+    }
+  }
+}
+
+class Planta {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.tamanho = 12;
+    this.maturacao = 0;
+    this.madura = false;
+    this.velocidadeDeCrescimento = random(0.002, 0.004); // Cada planta amadurece em velocidades diferentes
+  }
+
+  crescer() {
+    if (finalizouPlantio && prontoParaColheita) {
+      if (this.maturacao < 1) {
+        this.maturacao += this.velocidadeDeCrescimento; // Cada planta cresce em um ritmo próprio
+      } else {
+        this.madura = true; // Quando atinge 100% de maturação, fica madura
+      }
+    } else if (this.tamanho < 32) {
+      this.tamanho += 0.1;
+    }
+  }
+
+  mostrar() {
+    textSize(this.tamanho);
+
+    if (this.madura) {
+      text("🌾", this.x, this.y - 20); // Planta madura pronta para colheita
+    } else {
+      let fase = floor(this.maturacao * 3); // Divide em 3 fases antes de amadurecer
+      let emoji = ["🌱", "🌿", "🌾"][fase]; // Transição visual com crescimento aleatório
+      text(emoji, this.x, this.y - 20);
+    }
+  }
+}
+
+
